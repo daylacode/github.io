@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <title>Agent Presence</title>
+  <style>
+    body {
+      background-color: #1e1e1e;
+      color: #fff;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      padding: 40px;
+      text-align: center;
+    }
+    h1 {
+      color: #f1f1f1;
+      margin-bottom: 30px;
+    }
+    .ip-box {
+      background: #2c2c2c;
+      padding: 20px;
+      border-radius: 12px;
+      max-width: 300px;
+      margin: 10px auto;
+      transition: 0.3s;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    }
+    .online {
+      background: #007bff;
+      color: #fff;
+      font-weight: bold;
+      box-shadow: 0 0 10px #007bff;
+    }
+    .offline {
+      background: #444;
+      color: #999;
+      opacity: 0.5;
+    }
+    small {
+      color: #ccc;
+      display: block;
+      margin-top: 5px;
+      font-size: 12px;
+    }
+    #info {
+      font-size: 14px;
+      color: #888;
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h1>🟢 Trạng thái truy cập (Local)</h1>
+  <div id="info">Dựa trên IP người truy cập từ URL (?ip=...)</div>
+  <div id="list">Chưa có dữ liệu IP</div>
+
+  <script>
+    const TIMEOUT = 30; // giây
+    const STORAGE_KEY = "liveIpList";
+
+    // Lấy IP từ ?ip= trong URL
+    const params = new URLSearchParams(location.search);
+    const currentIP = params.get("ip");
+
+    // Ghi lại IP nếu có
+    if (currentIP) {
+      let data = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+      data[currentIP] = Date.now(); // cập nhật thời gian truy cập
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    }
+
+    // Render danh sách IP
+    function render() {
+      const now = Date.now();
+      const listDiv = document.getElementById("list");
+      listDiv.innerHTML = "";
+
+      const data = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+
+      const entries = Object.entries(data);
+      if (entries.length === 0) {
+        listDiv.innerHTML = "<p>Không có IP nào ghi nhận.</p>";
+        return;
+      }
+
+      for (const [ip, timestamp] of entries) {
+        const diff = (now - timestamp) / 1000;
+        const status = diff <= TIMEOUT ? "online" : "offline";
+
+        const box = document.createElement("div");
+        box.className = `ip-box ${status}`;
+        box.innerHTML = `
+          <div>IP: ${ip}</div>
+          <small>${status === "online" ? "Đang hoạt động" : "Ngắt kết nối"}</small>
+          <small>${Math.floor(diff)} giây trước</small>
+        `;
+        listDiv.appendChild(box);
+      }
+    }
+
+    render();
+    setInterval(render, 5000); // cập nhật mỗi 5 giây
+  </script>
+</body>
+</html>
